@@ -1,15 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, Clock, BookOpen } from 'lucide-react';
+import { ArrowRight, Star, Clock, BookOpen, Tag } from 'lucide-react';
+import { isFreeTrack } from '../utils/pricing';
 
 export default function CertificationCard({ cert }) {
   const isActive = cert.status === 'active';
+  const isFree = isFreeTrack(cert.codePrefix);
 
   return (
     <div className="group relative flex flex-col justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-subtle transition-all duration-200 hover:shadow-card-hover hover:border-brand-300">
       
       <div>
-        {/* Top Header: Category Badge & Rating */}
+        {/* Top Header: Category Badge, Price & Rating */}
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center font-bold text-sm shadow-sm group-hover:bg-brand-600 transition-colors">
@@ -17,6 +19,14 @@ export default function CertificationCard({ cert }) {
             </div>
             <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">
               {cert.difficulty}
+            </span>
+            <span className={`text-xs font-bold px-2.5 py-1 rounded-md flex items-center gap-1 ${
+              isFree 
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
+                : 'bg-blue-50 text-blue-700 border border-blue-200'
+            }`}>
+              <Tag className="w-3 h-3" />
+              {isFree ? 'Free' : '₹49'}
             </span>
           </div>
 

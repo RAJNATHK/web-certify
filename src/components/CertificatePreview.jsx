@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, Printer, Copy, Check, Award, ShieldCheck, ExternalLink } from 'lucide-react';
+import { Download, Printer, Copy, Check, Award, ShieldCheck, ExternalLink, Lock } from 'lucide-react';
 import { downloadCertificatePDF, formatCertificateDate } from '../utils/certificate';
 
 export default function CertificatePreview({
@@ -11,16 +11,50 @@ export default function CertificatePreview({
   percentage,
   issueDate = new Date(),
   certificateId,
-  codePrefix = 'CPP'
+  codePrefix = 'CPP',
+  locked = false
 }) {
   const [copied, setCopied] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
   const formattedDate = formatCertificateDate(issueDate);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
+    if (locked) return;
     setDownloading(true);
     try {
+      const savedKey = `cert_unlock_${certificateId}`;
+      const savedDataRaw = localStorage.getItem(savedKey);
+      let paymentId = null;
+      let unlockToken = null;
+
+      if (savedDataRaw) {
+        try {
+          const parsed = JSON.parse(savedDataRaw);
+          paymentId = parsed.paymentId || null;
+          unlockToken = parsed.unlockToken || null;
+        } catch {
+          unlockToken = savedDataRaw;
+        }
+      }
+
+      const authRes = await fetch('/api/authorize-download', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          certificateId,
+          paymentId,
+          unlockToken
+        }),
+      });
+
+      const authData = await authRes.json();
+
+      if (!authRes.ok || !authData.authorized) {
+        alert(authData.error || 'Server authorization failed. Unable to verify certificate download permission.');
+        return;
+      }
+
       downloadCertificatePDF({
         studentName,
         certificationTitle,
@@ -33,12 +67,14 @@ export default function CertificatePreview({
       });
     } catch (e) {
       console.error('Download error:', e);
+      alert('Could not verify download authorization. Please check your network connection.');
     } finally {
       setTimeout(() => setDownloading(false), 800);
     }
   };
 
   const handlePrint = () => {
+    if (locked) return;
     window.print();
   };
 
@@ -57,6 +93,16 @@ export default function CertificatePreview({
         className="w-full max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border-[10px] border-navy-950 p-4 sm:p-8 relative overflow-hidden"
         style={{ aspectRatio: '1.414 / 1' }}
       >
+        {locked && (
+          <div
+            className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none select-none"
+            aria-hidden="true"
+          >
+            <div className="rotate-[-24deg] text-slate-300/70 font-black text-4xl sm:text-6xl tracking-widest uppercase whitespace-nowrap">
+              Preview · Unpaid
+            </div>
+          </div>
+        )}
         {/* Inner Gold & Navy Double Border Accent */}
         <div className="w-full h-full border-2 border-amber-500/80 rounded-xl p-4 sm:p-8 flex flex-col justify-between relative bg-gradient-to-b from-slate-50/70 via-white to-slate-50/70">
           
@@ -177,17 +223,25 @@ export default function CertificatePreview({
 
         {/* Verification & Export Actions */}
         <div className="flex items-center gap-3">
-          <Link
-            to={`/verify?id=${certificateId}`}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
-          >
-            <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-            <span>Verify Online</span>
-          </Link>
+          {locked ? (
+            <span className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-slate-400 text-xs font-bold cursor-not-allowed">
+              <Lock className="w-3.5 h-3.5" />
+              <span>Verify Online (unlock below)</span>
+            </span>
+          ) : (
+            <Link
+              to={`/verify?id=${certificateId}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
+              <span>Verify Online</span>
+            </Link>
+          )}
 
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors"
+            disabled={locked}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-white"
           >
             <Printer className="w-3.5 h-3.5 text-slate-500" />
             <span>Print</span>
@@ -195,11 +249,11 @@ export default function CertificatePreview({
 
           <button
             onClick={handleDownload}
-            disabled={downloading}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all shadow-md"
+            disabled={downloading || locked}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-all shadow-md disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Download className="w-4 h-4" />
-            <span>{downloading ? 'Generating PDF...' : 'Download PDF Certificate'}</span>
+            {locked ? <Lock className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+            <span>{locked ? 'Unlock to Download' : downloading ? 'Generating PDF...' : 'Download PDF Certificate'}</span>
           </button>
         </div>
 

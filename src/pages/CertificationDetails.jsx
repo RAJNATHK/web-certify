@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   getCertificationById 
 } from '../data/certifications';
+import { isFreeTrack } from '../utils/pricing';
 import { 
   getStoredUserName, 
   saveStoredUserName 
@@ -121,8 +122,10 @@ export default function CertificationDetails() {
             </div>
 
             <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-subtle">
-              <span className="text-xs text-slate-500 font-medium block">Final Exam</span>
-              <span className="text-base font-bold text-navy-900 mt-0.5 block">50 Questions</span>
+              <span className="text-xs text-slate-500 font-medium block">Certificate Fee</span>
+              <span className={`text-base font-bold mt-0.5 block ${isFreeTrack(cert.codePrefix) ? 'text-emerald-600' : 'text-brand-600'}`}>
+                {isFreeTrack(cert.codePrefix) ? 'Free' : '₹49'}
+              </span>
             </div>
 
             <div className="p-4 rounded-xl bg-white border border-slate-200 shadow-subtle">
@@ -142,9 +145,16 @@ export default function CertificationDetails() {
               <div className="w-10 h-10 rounded-xl bg-navy-900 text-white flex items-center justify-center">
                 <Award className="w-5 h-5 text-brand-400" />
               </div>
-              <div>
-                <h3 className="text-base font-bold text-navy-900">Enroll & Begin Exam</h3>
-                <span className="text-xs text-slate-500">Official Certification Portal</span>
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-base font-bold text-navy-900">Enroll & Begin Exam</h3>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                    isFreeTrack(cert.codePrefix) ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                  }`}>
+                    {isFreeTrack(cert.codePrefix) ? 'Free Track' : '₹49 Fee'}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 block">Official Certification Portal</span>
               </div>
             </div>
 

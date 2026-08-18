@@ -1,17 +1,31 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import CertificatePreview from '../components/CertificatePreview';
+import PaymentGate from '../components/PaymentGate';
+import { isFreeTrack } from '../utils/pricing';
 import { 
   CheckCircle2, 
   ArrowRight, 
-  FileText
+  FileText,
+  Gift
 } from 'lucide-react';
 
 export default function CertificateView() {
   const location = useLocation();
   const state = location.state;
+  const [unlocked, setUnlocked] = useState(false);
 
-  if (!state || !state.certificateId) {
+  const certificateId = state?.certificateId;
+  const derivedCodePrefix = state?.codePrefix || (certificateId ? certificateId.split('-')[0] : 'CPP');
+  const isFree = isFreeTrack(derivedCodePrefix);
+
+  useEffect(() => {
+    if (isFree) {
+      setUnlocked(true);
+    }
+  }, [isFree]);
+
+  if (!state || !certificateId) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-20 text-center space-y-4">
         <h2 className="text-2xl font-bold text-navy-900">No Certificate Selected</h2>
@@ -31,8 +45,7 @@ export default function CertificateView() {
     totalQuestions = 50,
     percentage,
     issueDate,
-    certificateId,
-    codePrefix = 'CPP'
+    codePrefix = derivedCodePrefix
   } = state;
 
   return (
@@ -40,15 +53,23 @@ export default function CertificateView() {
       
       {/* Header */}
       <div className="text-center max-w-2xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-semibold">
           <CheckCircle2 className="w-3.5 h-3.5" />
           <span>Credential Successfully Issued</span>
+          {isFree && (
+            <span className="inline-flex items-center gap-1 ml-1 px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[11px] font-extrabold uppercase">
+              <Gift className="w-3 h-3" /> Free Track Certificate
+            </span>
+          )}
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-navy-900 tracking-tight">
           Your Certificate Is Ready
         </h1>
         <p className="text-sm sm:text-base text-slate-600">
-          Congratulations on demonstrating your programming knowledge! You can download your official PDF copy or print it directly.
+          {isFree 
+            ? 'Congratulations! As a free track participant, your official certificate is fully unlocked and ready to download or print.'
+            : 'Congratulations on demonstrating your programming knowledge! You can download your official PDF copy or print it directly.'
+          }
         </p>
       </div>
 
@@ -62,7 +83,17 @@ export default function CertificateView() {
         issueDate={issueDate}
         certificateId={certificateId}
         codePrefix={codePrefix}
+        locked={!unlocked}
       />
+
+      {/* Download/Verify unlock behind ₹49 Razorpay payment (skipped for free tracks) */}
+      {!unlocked && !isFree && (
+        <PaymentGate
+          certificateId={certificateId}
+          studentName={studentName}
+          onUnlocked={() => setUnlocked(true)}
+        />
+      )}
 
       {/* Summary Metadata Card */}
       <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-subtle space-y-4">

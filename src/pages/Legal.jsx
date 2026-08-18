@@ -48,6 +48,16 @@ export default function Legal() {
         >
           Cookie Policy
         </button>
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`pb-3 text-sm font-semibold border-b-2 transition-colors ${
+            activeTab === 'payments'
+              ? 'border-brand-600 text-brand-600'
+              : 'border-transparent text-slate-500 hover:text-navy-900'
+          }`}
+        >
+          Payments & Refunds
+        </button>
       </div>
 
       {/* Content */}
@@ -101,6 +111,25 @@ export default function Legal() {
             <h2 className="text-lg font-bold text-navy-900">2. Managing Cookies</h2>
             <p>
               You can control and manage cookies through your browser settings. Disabling cookies will not affect your ability to take assessments and download certificates.
+            </p>
+          </div>
+        )}
+
+        {activeTab === 'payments' && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-bold text-navy-900">1. Pricing Model & Fees</h2>
+            <p>
+              The C++ Systems Programming & Memory Architecture track is currently offered free of charge; all other certification tracks require the ₹49 one-time download fee described above.
+            </p>
+
+            <h2 className="text-lg font-bold text-navy-900">2. Secure Checkout</h2>
+            <p>
+              All payments for paid certification tracks are securely processed through Razorpay. We do not store financial account credentials, credit card details, or UPI PINs on our servers.
+            </p>
+
+            <h2 className="text-lg font-bold text-navy-900">3. Refund Policy</h2>
+            <p>
+              If a transaction fails or money is deducted without issuing an unlock credential, Razorpay automatically initiates a refund to your original payment method within 5 to 7 business days. You can also contact support with your Payment ID for manual assistance.
             </p>
           </div>
         )}
